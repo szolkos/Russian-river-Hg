@@ -41,7 +41,12 @@ Source code for the manuscript: Multi-decadal declines in particulate mercury an
 - *GEOS_Chem_Hg_dep.csv*: Annual atmospheric Hg deposition (mg/y, 1960-2015) to each watershed.  
 - *era5_temp_precip_1979_2020.csv*: Mean annual air temperature (MAAT) and total annual precipitation (1979-2020) for each watershed.  
 - *lit_comparison.csv*: PHg values from this study and from the literature.  
-- *WRTDS_EGRET*: Results from WRTDS analyses of TSS and PHg trends; used in plotting.  
+- *annual_[RIVER]_Hg*: Results from WRTDS analyses of Hg concentration (µg/g); used in plotting. Note: these flux values should NOT be used.  
+- *annual_[RIVER]_PHg*: Results from WRTDS analyses of PHg concentration (ng/L); used in plotting.  
+- *annual_[RIVER]_TSS*: Results from WRTDS analyses of TSS and PHg trends; used in plotting.  
+- *CI_[RIVER]_Hg*: 90% confidence intervals from WRTDS analyses of Hg concentration (µg/g); used in plotting. Note: these flux values should NOT be used.  
+- *CI_[RIVER]_PHg*: 90% confidence intervals from WRTDS analyses of PHg concentration (ng/L); used in plotting.  
+- *CI_[RIVER]_TSS*: 90% confidence intervals from WRTDS analyses of TSS and PHg trends; used in plotting.  
  
 ## Scripts
 ### Modeling
