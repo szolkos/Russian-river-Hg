@@ -41,12 +41,12 @@ Source code for the manuscript: Multi-decadal declines in particulate mercury an
 - *GEOS_Chem_Hg_dep.csv*: Annual atmospheric Hg deposition (mg/y, 1960-2015) to each watershed.  
 - *era5_temp_precip_1979_2020.csv*: Mean annual air temperature (MAAT) and total annual precipitation (1979-2020) for each watershed.  
 - *lit_comparison.csv*: PHg values from this study and from the literature.  
-- *annual_[RIVER]_Hg*: Estimates of Hg concentration (µg/g) derived using WRTDS; used in plotting. Note: these flux values should NOT be used.  
-- *annual_[RIVER]_PHg*: Estimates of PHg concentration (ng/L) and flux derived using WRTDS; used in plotting.  
-- *annual_[RIVER]_TSS*: Estimates of TSS concentration (mg/L) and flux derived using WRTDS; used in plotting.  
-- *CI_[RIVER]_Hg*: 90% confidence intervals for estimates of Hg concentration (µg/g) derived using WRTDS; used in plotting. Note: flux values within this .csv should NOT be used.  
-- *CI_[RIVER]_PHg*: 90% confidence intervals for estimates of PHg concentration (ng/L) and flux derived using WRTDS; used in plotting.  
-- *CI_[RIVER]_TSS*: 90% confidence intervals for estimates of TSS concentration (mg/L) and flux derived using WRTDS; used in plotting.  
+- *annual_[RIVER]_Hg*: Estimates of annual PHg concentration (µg/g) derived using WRTDS; used in plotting. Note: these flux values should NOT be used.  
+- *annual_[RIVER]_PHg*: Estimates of annual PHg flux (using concentration in ng/L) derived using WRTDS; used in plotting.  
+- *annual_[RIVER]_TSS*: Estimates of annual TSS concentration and flux derived using WRTDS; used in plotting.  
+- *CI_[RIVER]_Hg*: 90% confidence intervals for estimates of annual PHg concentration (µg/g) derived using WRTDS; used in plotting. Note: flux values within this .csv should NOT be used.  
+- *CI_[RIVER]_PHg*: 90% confidence intervals for estimates of annual PHg flux derived using WRTDS; used in plotting.  
+- *CI_[RIVER]_TSS*: 90% confidence intervals for estimates of annual TSS concentration and flux derived using WRTDS; used in plotting.  
  
 ## Scripts
 ### Modeling
