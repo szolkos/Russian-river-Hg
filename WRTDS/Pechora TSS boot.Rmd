@@ -1,0 +1,65 @@
+---
+title: "Pechora TSS boot"
+output: html_document
+---
+
+```{r}
+library(foreach)
+library(doParallel)
+library(iterators)
+library(EGRET)
+library(EGRETci)
+```
+
+```{r}
+filePath <-  "/Users/anya/Desktop/ArcticGRO EGRET/Russian HG EGRET/Input/"
+
+Daily_Pechora <- readUserDaily(filePath,"Q_Pechora.csv", qUnit = 2)
+Sample_Pechora_TSS <- readUserSample(filePath,"S_Pechora_TSS.csv")
+INFO_Pechora_TSS <- readUserInfo(filePath, "INFO_Pechora_TSS.csv")
+merge_Pechora_TSS <- mergeReport(INFO_Pechora_TSS, Daily_Pechora,Sample_Pechora_TSS)
+
+
+eList_Pechora_TSS <- modelEstimation(merge_Pechora_TSS, minNumObs = 80) #run WRTDS model
+eList_Pechora_TSS_calendar <- setPA(eList_Pechora_TSS, paStart = 1, paLong =12)
+```
+
+```{r}
+pairOut_2 <- runPairs(eList_Pechora_TSS_calendar, year1 = 1983, year2 = 2018, windowSide = 7)
+Persent_change <- attr(pairOut_2, "Other")
+write.table(Persent_change, file="Pechora_TSS_Persent_change.csv",sep=",", row.names = FALSE)
+write.table(pairOut_2, file="Pechora_TSS_change.csv",sep=",", row.names = FALSE)
+
+boot_pair_our <- runPairsBoot(eList_Pechora_TSS_calendar, pairOut_2)
+write.table(boot_pair_our$wordsOut, file="Pechora_TSS_boot.csv",sep=",", row.names = FALSE,quote=FALSE)
+write.table(boot_pair_our$bootOut, file="Pechora_TSS_boot_table.csv",sep=",", row.names = FALSE,quote=FALSE)
+```
+
+```{r}
+eListOut <- runSeries(eList_Pechora_TSS_calendar, windowSide = 7, verbose = FALSE)
+```
+
+```{r}
+Pechora_TSS_Daily <- eListOut$Daily
+write.csv(Pechora_TSS_Daily, file = "Pechora_TSS_Daily.csv", row.names = FALSE)
+
+Pechora_TSS_Annual <- tableResults(eListOut)
+write.csv(Pechora_TSS_Annual, file = "Pechora_TSS_Annual.csv", row.names = FALSE)
+
+Pechora_TSS_tableChange_Flux <- tableChangeSingle(eListOut, yearPoints = c(1983, 2018), flux = TRUE)
+write.csv(Pechora_TSS_tableChange_Flux, file = "Pechora_TSS_tableChange_Flux.csv", row.names = FALSE)
+
+Pechora_TSS_tableChange_Conc <- tableChangeSingle(eListOut, yearPoints = c(1983, 2018), flux = FALSE)
+write.csv(Pechora_TSS_tableChange_Conc, file = "Pechora_TSS_tableChange_Conc.csv", row.names = FALSE)
+```
+
+```{r}
+CIAnnualResults <- ciCalculations(eListOut, verbose = FALSE,nBoot = 100, blockLength = 200, widthCI = 90 )
+
+write.table(CIAnnualResults, file="CI_Pechora_TSS_boot.csv",sep=",", row.names = FALSE,quote=FALSE)
+```
+
+```{r}
+plotFluxHistBoot(eList_Pechora_TSS_calendar, CIAnnualResults)
+```
+

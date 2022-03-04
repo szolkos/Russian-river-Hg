@@ -1,0 +1,84 @@
+---
+title: "Lena TSS"
+output: html_document
+---
+
+```{r}
+library(foreach)
+library(doParallel)
+library(iterators)
+library(EGRET)
+library(EGRETci)
+```
+
+```{r}
+filePath <-  "/Users/anya/Desktop/ArcticGRO EGRET/Russian HG EGRET/input_data_TSS/"
+
+Daily_Lena <- readUserDaily(filePath,"Q_Lena.csv", qUnit = 2)
+Sample_Lena_TSS <- readUserSample(filePath,"S_Lena_TSS.csv")
+INFO_Lena_TSS <- readUserInfo(filePath, "INFO_Lena_TSS.csv")
+merge_Lena_TSS <- mergeReport(INFO_Lena_TSS, Daily_Lena,Sample_Lena_TSS)
+
+
+eList_Lena_TSS <- modelEstimation(merge_Lena_TSS, minNumObs = 40) #run WRTDS model
+eList_Lena_TSS_calendar <- setPA(eList_Lena_TSS, paStart = 1, paLong =12)
+```
+
+```{r}
+tableChange_Flux_Lena_TSS <- tableChangeSingle(eList_Lena_TSS_calendar, yearPoints=c(2004,2018), flux = TRUE)
+tableChange_Conc_Lena_TSS <- tableChangeSingle(eList_Lena_TSS_calendar, yearPoints=c(2004,2018), flux = FALSE)
+
+write.table(tableChange_Flux_Lena_TSS, file="change_slope_TSS/Change_Flux_Lena_TSS.csv",sep=",", row.names = FALSE,quote=FALSE)
+write.table(tableChange_Conc_Lena_TSS, file="change_slope_TSS/Change_Conc_Lena_TSS.csv",sep=",", row.names = FALSE,quote=FALSE)
+```
+
+```{r}
+caseSetUp <- trendSetUp(eList_Lena_TSS_calendar, year1 = 2004, year2 = 2018, nBoot = 100, bootBreak = 39, blockLength = 200)
+eBoot <- wBT(eList_Lena_TSS_calendar,caseSetUp, fileName = "bootstrap_TSS/bootstrap_summary_Lena_TSS.txt")
+```
+
+```{r}
+eList_K_Lena_TSS_calendar <- WRTDSKalman(eList_Lena_TSS_calendar, niter = 200) #run WRTDS-Kalman model
+```
+
+```{r}
+Lena_TSS_Daily <- eList_K_Lena_TSS_calendar$Daily
+write.csv(Lena_TSS_Daily, file = "Lena_TSS_Daily.csv", row.names = FALSE)
+```
+
+```{r}
+tableData_Lena_TSS <- tableResults(eList_K_Lena_TSS_calendar)
+write.table(tableData_Lena_TSS, file="output_annual_TSS/annual_Lena_TSS.csv",sep=",", row.names = FALSE,quote=FALSE)
+```
+
+confidence intervals with Parallel Computing
+```{r}
+nBoot <- 100
+blockLength <- 200
+coreOut <- 1 #Number of cores to leave out of processing tasks
+
+widthCI <- 90
+ciLower <- (50-(widthCI/2))/100
+ciUpper <- (50+(widthCI/2))/100
+prLenas <- c(ciLower,ciUpper)
+
+nCores <- detectCores() - coreOut
+cl <- makeCluster(nCores)
+registerDoParallel(cl)
+repAnnual <- foreach(n = 1:nBoot,.packages=c('EGRETci')) %dopar% {
+   annualResults <- bootAnnual(eList_Lena_TSS_calendar, 
+                               blockLength,
+                               startSeed = n)  
+}
+stopCluster(cl)               
+
+CIAnnualResults <- ciBands(eList_Lena_TSS_calendar, repAnnual, prLenas)
+save(eList_Lena_TSS_calendar,CIAnnualResults, file="confidence_intervals_TSS/CI_Lena_TSS.RData")
+
+
+write.table(CIAnnualResults, file="confidence_intervals_TSS/CI_Lena_TSS.csv",sep=",", row.names = FALSE,quote=FALSE)
+```
+
+```{r}
+plotFluxHistBoot(eList_Lena_TSS_calendar, CIAnnualResults)
+```

@@ -1,0 +1,86 @@
+---
+title: "NorthDvina TSS"
+output: html_document
+---
+
+```{r}
+library(foreach)
+library(doParallel)
+library(iterators)
+library(EGRET)
+library(EGRETci)
+```
+
+```{r}
+filePath <-  "/Users/anya/Desktop/ArcticGRO EGRET/Russian HG EGRET/input_data_TSS/"
+
+Daily_NorthDvina <- readUserDaily(filePath,"Q_NorthDvina.csv", qUnit = 2)
+Sample_NorthDvina_TSS <- readUserSample(filePath,"S_NorthDvina_TSS.csv")
+INFO_NorthDvina_TSS <- readUserInfo(filePath, "INFO_NorthDvina_TSS.csv")
+merge_NorthDvina_TSS <- mergeReport(INFO_NorthDvina_TSS, Daily_NorthDvina,Sample_NorthDvina_TSS)
+
+
+eList_NorthDvina_TSS <- modelEstimation(merge_NorthDvina_TSS, minNumObs = 80) #run WRTDS model
+eList_NorthDvina_TSS_calendar <- setPA(eList_NorthDvina_TSS, paStart = 1, paLong =12)
+```
+
+```{r}
+tableChange_Flux_NorthDvina_TSS <- tableChangeSingle(eList_NorthDvina_TSS_calendar, yearPoints=c(1979,2001), flux = TRUE)
+tableChange_Conc_NorthDvina_TSS <- tableChangeSingle(eList_NorthDvina_TSS_calendar, yearPoints=c(1979,2001), flux = FALSE)
+
+write.table(tableChange_Flux_NorthDvina_TSS, file="change_slope_TSS/Change_Flux_NorthDvina_TSS.csv",sep=",", row.names = FALSE,quote=FALSE)
+write.table(tableChange_Conc_NorthDvina_TSS, file="change_slope_TSS/Change_Conc_NorthDvina_TSS.csv",sep=",", row.names = FALSE,quote=FALSE)
+```
+
+```{r}
+caseSetUp <- trendSetUp(eList_NorthDvina_TSS_calendar, year1 = 1979, year2 = 2001, nBoot = 100, bootBreak = 39, blockLength = 200)
+eBoot <- wBT(eList_NorthDvina_TSS_calendar,caseSetUp, fileName = "bootstrap_TSS/bootstrap_summary_NorthDvina_TSS.txt")
+```
+
+```{r}
+eList_K_NorthDvina_TSS_calendar <- WRTDSKalman(eList_NorthDvina_TSS_calendar, niter = 200) #run WRTDS-Kalman model
+```
+
+```{r}
+NorthDvina_TSS_Daily <- eList_K_NorthDvina_TSS_calendar$Daily
+write.csv(NorthDvina_TSS_Daily, file = "NorthDvina_TSS_Daily.csv", row.names = FALSE)
+```
+
+```{r}
+tableData_NorthDvina_TSS <- tableResults(eList_K_NorthDvina_TSS_calendar)
+write.table(tableData_NorthDvina_TSS, file="output_annual_TSS/annual_NorthDvina_TSS.csv",sep=",", row.names = FALSE,quote=FALSE)
+```
+
+
+confidence intervals with Parallel Computing
+```{r}
+nBoot <- 100
+blockLength <- 200
+coreOut <- 1 #Number of cores to leave out of processing tasks
+
+widthCI <- 90
+ciLower <- (50-(widthCI/2))/100
+ciUpper <- (50+(widthCI/2))/100
+prNorthDvinas <- c(ciLower,ciUpper)
+
+nCores <- detectCores() - coreOut
+cl <- makeCluster(nCores)
+registerDoParallel(cl)
+repAnnual <- foreach(n = 1:nBoot,.packages=c('EGRETci')) %dopar% {
+   annualResults <- bootAnnual(eList_NorthDvina_TSS_calendar, 
+                               blockLength,
+                               startSeed = n)  
+}
+stopCluster(cl)               
+
+CIAnnualResults <- ciBands(eList_NorthDvina_TSS_calendar, repAnnual, prNorthDvinas)
+save(eList_NorthDvina_TSS_calendar,CIAnnualResults, file="confidence_intervals_TSS/CI_NorthDvina_TSS.RData")
+
+
+write.table(CIAnnualResults, file="confidence_intervals_TSS/CI_NorthDvina_TSS.csv",sep=",", row.names = FALSE,quote=FALSE)
+```
+
+```{r}
+plotFluxHistBoot(eList_NorthDvina_TSS_calendar, CIAnnualResults)
+```
+

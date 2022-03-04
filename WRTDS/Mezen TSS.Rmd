@@ -1,0 +1,85 @@
+---
+title: "Mezen TSS"
+output: html_document
+---
+
+```{r}
+library(foreach)
+library(doParallel)
+library(iterators)
+library(EGRET)
+library(EGRETci)
+```
+
+```{r}
+filePath <-  "/Users/anya/Desktop/ArcticGRO EGRET/Russian HG EGRET/input_data_TSS/"
+
+Daily_Mezen <- readUserDaily(filePath,"Q_Mezen.csv", qUnit = 2)
+Sample_Mezen_TSS <- readUserSample(filePath,"S_Mezen_TSS.csv")
+INFO_Mezen_TSS <- readUserInfo(filePath, "INFO_Mezen_TSS.csv")
+merge_Mezen_TSS <- mergeReport(INFO_Mezen_TSS, Daily_Mezen,Sample_Mezen_TSS)
+
+
+eList_Mezen_TSS <- modelEstimation(merge_Mezen_TSS, minNumObs = 80) #run WRTDS model
+eList_Mezen_TSS_calendar <- setPA(eList_Mezen_TSS, paStart = 1, paLong =12)
+```
+
+```{r}
+tableChange_Flux_Mezen_TSS <- tableChangeSingle(eList_Mezen_TSS_calendar, yearPoints=c(1980,2018), flux = TRUE)
+tableChange_Conc_Mezen_TSS <- tableChangeSingle(eList_Mezen_TSS_calendar, yearPoints=c(1980,2018), flux = FALSE)
+
+write.table(tableChange_Flux_Mezen_TSS, file="change_slope_TSS/Change_Flux_Mezen_TSS.csv",sep=",", row.names = FALSE,quote=FALSE)
+write.table(tableChange_Conc_Mezen_TSS, file="change_slope_TSS/Change_Conc_Mezen_TSS.csv",sep=",", row.names = FALSE,quote=FALSE)
+```
+
+```{r}
+caseSetUp <- trendSetUp(eList_Mezen_TSS_calendar, year1 = 1980, year2 = 2018, nBoot = 100, bootBreak = 39, blockLength = 200)
+eBoot <- wBT(eList_Mezen_TSS_calendar,caseSetUp, fileName = "bootstrap_TSS/bootstrap_summary_Mezen_TSS.txt")
+```
+
+```{r}
+eList_K_Mezen_TSS_calendar <- WRTDSKalman(eList_Mezen_TSS_calendar, niter = 200) #run WRTDS-Kalman model
+```
+
+```{r}
+Mezen_TSS_Daily <- eList_K_Mezen_TSS_calendar$Daily
+write.csv(Mezen_TSS_Daily, file = "Mezen_TSS_Daily.csv", row.names = FALSE)
+```
+
+```{r}
+tableData_Mezen_TSS <- tableResults(eList_K_Mezen_TSS_calendar)
+write.table(tableData_Mezen_TSS, file="output_annual_TSS/annual_Mezen_TSS.csv",sep=",", row.names = FALSE,quote=FALSE)
+```
+
+confidence intervals with Parallel Computing
+```{r}
+nBoot <- 100
+blockLength <- 200
+coreOut <- 1 #Number of cores to leave out of processing tasks
+
+widthCI <- 90
+ciLower <- (50-(widthCI/2))/100
+ciUpper <- (50+(widthCI/2))/100
+prMezens <- c(ciLower,ciUpper)
+
+nCores <- detectCores() - coreOut
+cl <- makeCluster(nCores)
+registerDoParallel(cl)
+repAnnual <- foreach(n = 1:nBoot,.packages=c('EGRETci')) %dopar% {
+   annualResults <- bootAnnual(eList_Mezen_TSS_calendar, 
+                               blockLength,
+                               startSeed = n)  
+}
+stopCluster(cl)               
+
+CIAnnualResults <- ciBands(eList_Mezen_TSS_calendar, repAnnual, prMezens)
+save(eList_Mezen_TSS_calendar,CIAnnualResults, file="confidence_intervals_TSS/CI_Mezen_TSS.RData")
+
+
+write.table(CIAnnualResults, file="confidence_intervals_TSS/CI_Mezen_TSS.csv",sep=",", row.names = FALSE,quote=FALSE)
+```
+
+```{r}
+plotFluxHistBoot(eList_Mezen_TSS_calendar, CIAnnualResults)
+```
+

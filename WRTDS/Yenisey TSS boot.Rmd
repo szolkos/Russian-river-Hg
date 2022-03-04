@@ -1,0 +1,66 @@
+---
+title: "Yenisey TSS boot"
+output: html_document
+---
+
+```{r}
+library(foreach)
+library(doParallel)
+library(iterators)
+library(EGRET)
+library(EGRETci)
+```
+
+```{r}
+filePath <-  "/Users/anya/Desktop/ArcticGRO EGRET/Russian HG EGRET/Input/"
+
+Daily_Yenisey <- readUserDaily(filePath,"Q_Yenisey.csv", qUnit = 2)
+Sample_Yenisey_TSS <- readUserSample(filePath,"S_Yenisey_TSS.csv")
+INFO_Yenisey_TSS <- readUserInfo(filePath, "INFO_Yenisey_TSS.csv")
+merge_Yenisey_TSS <- mergeReport(INFO_Yenisey_TSS, Daily_Yenisey,Sample_Yenisey_TSS)
+
+
+eList_Yenisey_TSS <- modelEstimation(merge_Yenisey_TSS, minNumObs = 80) #run WRTDS model
+eList_Yenisey_TSS_calendar <- setPA(eList_Yenisey_TSS, paStart = 1, paLong =12)
+```
+
+```{r}
+pairOut_2 <- runPairs(eList_Yenisey_TSS_calendar, year1 = 1980, year2 = 2011, windowSide = 7)
+Persent_change <- attr(pairOut_2, "Other")
+write.table(Persent_change, file="Yenisey_TSS_Persent_change.csv",sep=",", row.names = FALSE)
+write.table(pairOut_2, file="Yenisey_TSS_change.csv",sep=",", row.names = FALSE)
+
+boot_pair_our <- runPairsBoot(eList_Yenisey_TSS_calendar, pairOut_2)
+write.table(boot_pair_our$wordsOut, file="Yenisey_TSS_boot.csv",sep=",", row.names = FALSE,quote=FALSE)
+write.table(boot_pair_our$bootOut, file="Yenisey_TSS_boot_table.csv",sep=",", row.names = FALSE,quote=FALSE)
+```
+
+```{r}
+eListOut <- runSeries(eList_Yenisey_TSS_calendar, windowSide = 7, verbose = FALSE)
+```
+
+```{r}
+Yenisey_TSS_Daily <- eListOut$Daily
+write.csv(Yenisey_TSS_Daily, file = "Yenisey_TSS_Daily.csv", row.names = FALSE)
+
+Yenisey_TSS_Annual <- tableResults(eListOut)
+write.csv(Yenisey_TSS_Annual, file = "Yenisey_TSS_Annual.csv", row.names = FALSE)
+
+Yenisey_TSS_tableChange_Flux <- tableChangeSingle(eListOut, yearPoints = c(1980, 2011), flux = TRUE)
+write.csv(Yenisey_TSS_tableChange_Flux, file = "Yenisey_TSS_tableChange_Flux.csv", row.names = FALSE)
+
+Yenisey_TSS_tableChange_Conc <- tableChangeSingle(eListOut, yearPoints = c(1980, 2011), flux = FALSE)
+write.csv(Yenisey_TSS_tableChange_Conc, file = "Yenisey_TSS_tableChange_Conc.csv", row.names = FALSE)
+```
+
+```{r}
+CIAnnualResults <- ciCalculations(eListOut, verbose = FALSE,nBoot = 100, blockLength = 200, widthCI = 90 )
+
+write.table(CIAnnualResults, file="CI_Yenisey_TSS_boot.csv",sep=",", row.names = FALSE,quote=FALSE)
+```
+
+```{r}
+plotFluxHistBoot(eList_Yenisey_TSS_calendar, CIAnnualResults)
+```
+
+

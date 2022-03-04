@@ -1,0 +1,85 @@
+---
+title: "Ob PHg"
+output: html_document
+---
+
+```{r}
+library(foreach)
+library(doParallel)
+library(iterators)
+library(EGRET)
+library(EGRETci)
+```
+
+```{r}
+filePath <-  "/Users/anya/Desktop/ArcticGRO EGRET/Russian HG EGRET/input_data/"
+
+Daily_Ob <- readUserDaily(filePath,"Q_Ob.csv", qUnit = 2)
+Sample_Ob_PHg <- readUserSample(filePath,"S_Ob_PHg.csv")
+INFO_Ob_PHg <- readUserInfo(filePath, "INFO_Ob_PHg.csv")
+merge_Ob_PHg <- mergeReport(INFO_Ob_PHg, Daily_Ob,Sample_Ob_PHg)
+
+
+eList_Ob_PHg <- modelEstimation(merge_Ob_PHg, minNumObs = 80) #run WRTDS model
+eList_Ob_PHg_calendar <- setPA(eList_Ob_PHg, paStart = 1, paLong =12)
+```
+
+```{r}
+tableChange_Flux_Ob_PHg <- tableChangeSingle(eList_Ob_PHg_calendar, yearPoints=c(1979,2008), flux = TRUE)
+tableChange_Conc_Ob_PHg <- tableChangeSingle(eList_Ob_PHg_calendar, yearPoints=c(1979,2008), flux = FALSE)
+
+write.table(tableChange_Flux_Ob_PHg, file="change_slope_PHg/Change_Flux_Ob_PHg.csv",sep=",", row.names = FALSE,quote=FALSE)
+write.table(tableChange_Conc_Ob_PHg, file="change_slope_PHg/Change_Conc_Ob_PHg.csv",sep=",", row.names = FALSE,quote=FALSE)
+```
+
+```{r}
+caseSetUp <- trendSetUp(eList_Ob_PHg_calendar, year1 = 1979, year2 = 2008, nBoot = 100, bootBreak = 39, blockLength = 200)
+eBoot <- wBT(eList_Ob_PHg_calendar,caseSetUp, fileName = "bootstrap_PHg/bootstrap_summary_Ob_PHg.txt")
+```
+
+```{r}
+eList_K_Ob_PHg_calendar <- WRTDSKalman(eList_Ob_PHg_calendar, niter = 200) #run WRTDS-Kalman model
+```
+
+```{r}
+Ob_PHg_Daily <- eList_K_Ob_PHg_calendar$Daily
+write.csv(Ob_PHg_Daily, file = "Ob_PHg_Daily.csv", row.names = FALSE)
+```
+
+```{r}
+tableData_Ob_PHg <- tableResults(eList_K_Ob_PHg_calendar)
+write.table(tableData_Ob_PHg, file="output_annual_PHg/annual_Ob_PHg.csv",sep=",", row.names = FALSE,quote=FALSE)
+```
+
+
+confidence intervals with Parallel Computing
+```{r}
+nBoot <- 100
+blockLength <- 200
+coreOut <- 1 #Number of cores to leave out of processing tasks
+
+widthCI <- 90
+ciLower <- (50-(widthCI/2))/100
+ciUpper <- (50+(widthCI/2))/100
+probs <- c(ciLower,ciUpper)
+
+nCores <- detectCores() - coreOut
+cl <- makeCluster(nCores)
+registerDoParallel(cl)
+repAnnual <- foreach(n = 1:nBoot,.packages=c('EGRETci')) %dopar% {
+   annualResults <- bootAnnual(eList_Ob_PHg_calendar, 
+                               blockLength,
+                               startSeed = n)  
+}
+stopCluster(cl)               
+
+CIAnnualResults <- ciBands(eList_Ob_PHg_calendar, repAnnual, probs)
+save(eList_Ob_PHg_calendar,CIAnnualResults, file="confidence_intervals_PHg/CI_Ob_PHg.RData")
+
+
+write.table(CIAnnualResults, file="confidence_intervals_PHg/CI_Ob_PHg.csv",sep=",", row.names = FALSE,quote=FALSE)
+```
+
+```{r}
+plotFluxHistBoot(eList_Ob_PHg_calendar, CIAnnualResults)
+```

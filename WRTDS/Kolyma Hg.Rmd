@@ -1,0 +1,85 @@
+---
+title: "Kolyma Hg"
+output: html_document
+---
+
+```{r}
+library(foreach)
+library(doParallel)
+library(iterators)
+library(EGRET)
+library(EGRETci)
+```
+
+```{r}
+filePath <-  "/Users/anya/Desktop/ArcticGRO EGRET/Russian HG EGRET/input_data/"
+
+Daily_Kolyma <- readUserDaily(filePath,"Q_Kolyma.csv", qUnit = 2)
+Sample_Kolyma_Hg <- readUserSample(filePath,"S_Kolyma_Hg.csv")
+INFO_Kolyma_Hg <- readUserInfo(filePath, "INFO_Kolyma_Hg.csv")
+merge_Kolyma_Hg <- mergeReport(INFO_Kolyma_Hg, Daily_Kolyma,Sample_Kolyma_Hg)
+
+
+eList_Kolyma_Hg <- modelEstimation(merge_Kolyma_Hg, minNumObs =50) #run WRTDS model
+eList_Kolyma_Hg_calendar <- setPA(eList_Kolyma_Hg, paStart = 1, paLong =12)
+```
+
+```{r}
+tableChange_Flux_Kolyma_Hg <- tableChangeSingle(eList_Kolyma_Hg_calendar, yearPoints=c(1982,1987), flux = TRUE)
+tableChange_Conc_Kolyma_Hg <- tableChangeSingle(eList_Kolyma_Hg_calendar, yearPoints=c(1982,1987), flux = FALSE)
+
+write.table(tableChange_Flux_Kolyma_Hg, file="change_slope_Hg/Change_Flux_Kolyma_Hg.csv",sep=",", row.names = FALSE,quote=FALSE)
+write.table(tableChange_Conc_Kolyma_Hg, file="change_slope_Hg/Change_Conc_Kolyma_Hg.csv",sep=",", row.names = FALSE,quote=FALSE)
+```
+
+```{r}
+caseSetUp <- trendSetUp(eList_Kolyma_Hg_calendar, year1 = 1982, year2 = 1987, nBoot = 100, bootBreak = 39, blockLength = 200)
+eBoot <- wBT(eList_Kolyma_Hg_calendar,caseSetUp, fileName = "bootstrap_Hg/bootstrap_summary_Kolyma_Hg.txt")
+```
+
+```{r}
+eList_K_Kolyma_Hg_calendar <- WRTDSKalman(eList_Kolyma_Hg_calendar, niter = 200) #run WRTDS-Kalman model
+```
+
+```{r}
+Kolyma_Hg_Daily <- eList_K_Kolyma_Hg_calendar$Daily
+write.csv(Kolyma_Hg_Daily, file = "Kolyma_Hg_Daily.csv", row.names = FALSE)
+```
+
+```{r}
+tableData_Kolyma_Hg <- tableResults(eList_K_Kolyma_Hg_calendar)
+write.table(tableData_Kolyma_Hg, file="output_annual_Hg/annual_Kolyma_Hg.csv",sep=",", row.names = FALSE,quote=FALSE)
+```
+
+confidence intervals with Parallel Computing
+```{r}
+nBoot <- 100
+blockLength <- 200
+coreOut <- 1 #Number of cores to leave out of processing tasks
+
+widthCI <- 90
+ciLower <- (50-(widthCI/2))/100
+ciUpper <- (50+(widthCI/2))/100
+prKolymas <- c(ciLower,ciUpper)
+
+nCores <- detectCores() - coreOut
+cl <- makeCluster(nCores)
+registerDoParallel(cl)
+repAnnual <- foreach(n = 1:nBoot,.packages=c('EGRETci')) %dopar% {
+   annualResults <- bootAnnual(eList_Kolyma_Hg_calendar, 
+                               blockLength,
+                               startSeed = n)  
+}
+stopCluster(cl)               
+
+CIAnnualResults <- ciBands(eList_Kolyma_Hg_calendar, repAnnual, prKolymas)
+save(eList_Kolyma_Hg_calendar,CIAnnualResults, file="confidence_intervals_Hg/CI_Kolyma_Hg.RData")
+
+
+write.table(CIAnnualResults, file="confidence_intervals_Hg/CI_Kolyma_Hg.csv",sep=",", row.names = FALSE,quote=FALSE)
+```
+
+```{r}
+plotFluxHistBoot(eList_Kolyma_Hg_calendar, CIAnnualResults)
+```
+
