@@ -53,6 +53,7 @@ Source code for the manuscript: Multi-decadal declines in particulate mercury an
 ## Scripts
 ### Modeling
 *Folder "WRTDS"*: Rmd files containing code to estimate flow-weighted TSS and PHg concentration and fluxes, and their trends, for each river, using the U.S. Geological Survey weighted regressions on time, discharge, and season (WRTDS) hydrochemical constituent concentration and flux modeling approach implemented in the R package Exploration and Graphics for RivEr Trends (EGRET).  
+
 *GEOS_Chem.R*: Atmospheric Hg deposition magnitudes to each watershed.  
 
 ### Data processing
