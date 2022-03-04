@@ -26,7 +26,8 @@ Source code for the manuscript: Multi-decadal declines in particulate mercury an
 - [Robert M. Holmes](https://arcticgreatrivers.org)
 
 ## Data
-### The following data used in this manuscript can be downloaded from the Arctic Data Center:
+### The following data associated with this manuscript can be downloaded from the Arctic Data Center:
+#### Data used in generation of results
 - *concentrations.csv*: Concentrations of total suspended solids (TSS; mg/L) and mercury in TSS (i.e., particulate mercury, PHg; µg/g). Used in subsequent analyses.  
 - *Q_Onega.csv*: Onega River daily discharge data (m^3/s). Used in subsequent analyses.  
 - *Q_NorthDvina.csv*: Northern Dvina River daily discharge data (m^3/s). Used in subsequent analyses.  
@@ -41,6 +42,7 @@ Source code for the manuscript: Multi-decadal declines in particulate mercury an
 - *GEOS_Chem_Hg_dep.csv*: Annual atmospheric Hg deposition (mg/y, 1960-2015) to each watershed.  
 - *era5_temp_precip_1979_2020.csv*: Mean annual air temperature (MAAT) and total annual precipitation (1979-2020) for each watershed.  
 - *lit_comparison.csv*: PHg values from this study and from the literature.  
+#### Results from weighted regressions on time, discharge, and season (WRTDS) modeling
 - *annual_[RIVER]_Hg*: Estimates of annual PHg concentration (µg/g) derived using WRTDS; used in plotting. Note: these flux values should NOT be used.  
 - *annual_[RIVER]_PHg*: Estimates of annual PHg flux (using concentration in ng/L) derived using WRTDS; used in plotting.  
 - *annual_[RIVER]_TSS*: Estimates of annual TSS concentration and flux derived using WRTDS; used in plotting.  
