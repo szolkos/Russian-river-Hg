@@ -69,6 +69,7 @@ Source code for the manuscript: Multi-decadal declines in particulate mercury an
 *8_phg_lit_compare.r*:  Compare measured PHg (µg/g) from this study w/ observations in global rivers.  
 
 ## Packages
+### *For data processing, plotting, and analyses*
 - plotrix
 - ggplot2
 - gdata
@@ -86,7 +87,7 @@ Source code for the manuscript: Multi-decadal declines in particulate mercury an
 - dplyr
 - tidyr
 - ggtext
-### *Packages for WRTDS & EGRET*
+### *For WRTDS & EGRET*
 - foreach
 - doParallel
 - iterators
