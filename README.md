@@ -26,7 +26,7 @@ Source code for the manuscript: Multi-decadal declines in particulate mercury an
 - [Robert M. Holmes](https://arcticgreatrivers.org)
 
 ## Data
-### The following data associated with this manuscript can be downloaded from the Arctic Data Center:
+### The following data associated with this manuscript can be downloaded from the [Arctic Data Center](https://arcticdata.io/catalog/view/doi%3A10.18739%2FA2DZ0331M):
 #### Data used in generation of results
 - *concentrations.csv*: Concentrations of total suspended solids (TSS; mg/L) and mercury in TSS (i.e., particulate mercury, PHg; µg/g). Used in subsequent analyses.  
 - *Q_Onega.csv*: Onega River daily discharge data (m^3/s). Used in subsequent analyses.  
